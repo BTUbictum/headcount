@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HeadCount · Ubictum</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Paleta corporativa Ubictum — no agregar colores fuera de esta lista */
+    --azul:#54a4b3;
+    --gris:#636469;
+    --blanco:#ffffff;
+    --negro:#000000;
+
+    --bg:var(--blanco);
+    --panel:#f6f8f8;
+    --panel-elevated:#eef2f2;
+    --border:#dde3e4;
+    --text:var(--negro);
+    --text-muted:var(--gris);
+    --accent:var(--azul);
+    --accent-soft:rgba(84,164,179,.10);
+    --positive:var(--azul);
+    --positive-soft:rgba(84,164,179,.12);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+    padding:40px 48px 80px;
+  }
+  .eyebrow{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:10px;
+  }
+  .mark{
+    width:16px; height:16px;
+    border:2.4px solid var(--azul);
+    border-top:none;
+    border-radius:0 0 7px 7px;
+    position:relative;
+  }
+  .mark::after{
+    content:"";
+    position:absolute;
+    top:-2px; left:50%;
+    width:2.4px; height:2.4px;
+    background:var(--azul);
+    border-radius:50%;
+    transform:translateX(-50%);
+  }
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:24px;
+    border-bottom:1px solid var(--border);
+    padding-bottom:28px;
+    margin-bottom:28px;
+  }
+  h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:34px;
+    letter-spacing:-.01em;
+  }
+  .subtitle{
+    color:var(--text-muted);
+    font-size:14px;
+    margin-top:6px;
+  }
+  /* --- Counter (dock-door style) --- */
+  .counter-wrap{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .counter-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    writing-mode:vertical-rl;
+    transform:rotate(180deg);
+  }
+  .counter{
+    display:flex;
+    background:var(--panel-elevated);
+    border:1px solid var(--border);
+    border-radius:6px;
+    overflow:hidden;
+  }
+  .counter-digit{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size:36px;
+    width:34px;
+    text-align:center;
+    padding:10px 0;
+    color:var(--accent);
+    border-right:1px solid var(--border);
+    background:
+      linear-gradient(var(--panel-elevated), var(--panel-elevated)) padding-box;
+    position:relative;
+  }
+  .counter-digit::after{
+    content:"";
+    position:absolute;
+    left:0; right:0; top:50%;
+    height:1px;
+    background:var(--border);
+  }
+  .counter-digit:last-child{ border-right:none; }
+
+  /* --- Controls --- */
+  .controls{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-bottom:18px;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .field label{
+    font-size:11px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+  }
+  .field input{
+    background:var(--panel);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:6px;
+    padding:10px 12px;
+    font-size:14px;
+    font-family:'Inter', sans-serif;
+    width:220px;
+    outline:none;
+    transition:border-color .15s ease;
+  }
+  #buscarEmpleado{ font-family:'IBM Plex Mono', monospace; width:160px; }
+  .field input:focus{ border-color:var(--accent); }
+  .field input::placeholder{ color:#9aa3a6; }
+
+  .clear-btn{
+    align-self:flex-end;
+    background:none;
+    border:1px solid var(--border);
+    color:var(--text-muted);
+    border-radius:6px;
+    padding:10px 14px;
+    font-size:13px;
+    cursor:pointer;
+    font-family:'Inter', sans-serif;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .clear-btn:hover{ border-color:var(--text-muted); color:var(--text); }
+
+  .result-count{
+    margin-left:auto;
+    align-self:flex-end;
+    font-size:13px;
+    color:var(--text-muted);
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .result-count b{ color:var(--text); }
+
+  /* --- Table --- */
+  .table-wrap{
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+    background:var(--panel);
+  }
+  table{ width:100%; border-collapse:collapse; }
+  thead th{
+    text-align:left;
+    font-size:11px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    padding:14px 16px;
+    background:var(--panel-elevated);
+    border-bottom:1px solid var(--border);
+    position:sticky;
+    top:0;
+  }
+  tbody td{
+    padding:13px 16px;
+    font-size:14px;
+    border-bottom:1px solid var(--border);
+  }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover{ background:var(--panel-elevated); }
+  td.num{ font-family:'IBM Plex Mono', monospace; color:var(--accent); }
+  td.email{ color:var(--text-muted); font-size:13px; }
+
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--positive);
+    background:var(--positive-soft);
+    padding:4px 9px;
+    border-radius:20px;
+  }
+  .badge::before{
+    content:"";
+    width:6px; height:6px;
+    border-radius:50%;
+    background:var(--positive);
+  }
+
+  .empty-state{
+    padding:60px 20px;
+    text-align:center;
+    color:var(--text-muted);
+    font-size:14px;
+  }
+
+  footer{
+    margin-top:20px;
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+    color:#9aa3a6;
+    font-family:'IBM Plex Mono', monospace;
+  }
+
+  @media (max-width:640px){
+    body{ padding:24px 20px 60px; }
+    header{ flex-direction:column; align-items:flex-start; }
+    .table-wrap{ overflow-x:auto; }
+    table{ min-width:560px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="eyebrow"><span class="mark"></span>Ubictum · Business Technology</div>
+    <h1>HeadCount</h1>
+    <div class="subtitle">Listado de colaboradores activos</div>
+  </div>
+
+  <div class="counter-wrap">
+    <span class="counter-label">Activos</span>
+    <div class="counter" id="counter"><!-- dígitos generados por JS --></div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="field">
+    <label for="buscarEmpleado">No. Empleado</label>
+    <input type="text" id="buscarEmpleado" placeholder="Ej. 2010286" inputmode="numeric" />
+  </div>
+  <div class="field">
+    <label for="buscarNombre">Nombre</label>
+    <input type="text" id="buscarNombre" placeholder="Buscar por nombre" />
+  </div>
+  <button class="clear-btn" id="limpiar">Limpiar filtros</button>
+  <div class="result-count" id="resultCount"></div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>No. Empleado</th>
+        <th>Nombre completo</th>
+        <th>Correo</th>
+        <th>Estatus</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div class="empty-state" id="emptyState" style="display:none">
+    No se encontraron colaboradores con ese criterio de búsqueda.
+  </div>
+</div>
+
+<footer>
+  <span id="fuenteDatos">Fuente: datos de prueba — pendiente de conectar a la API real de biométricos</span>
+  <span id="reloj"></span>
+</footer>
+
+<script>
+  /* ============================================================
+   * DATOS DE PRUEBA
+   * ------------------------------------------------------------
+   * Estructura pensada para calzar con los campos reales de la
+   * API (num_emp, nombre, apellido_paterno, apellido_materno,
+   * correo, estatus). Cuando esté lista la API real, reemplaza
+   * la función cargarDatos() por un fetch al endpoint del proxy
+   * (ver comentario al final del script).
+   * ============================================================ */
+  const DATOS_PRUEBA = [
+    { num_emp: "2009896", nombre: "ABRAM", apellido_paterno: "GUTIERREZ", apellido_materno: "CATALAN", correo: "abram.gutierrez@nadro.com.mx", estatus: "A" },
+    { num_emp: "2009903", nombre: "MONICA", apellido_paterno: "ZAMORA", apellido_materno: "SANTOS", correo: "monica.zamora@nadro.com.mx", estatus: "A" },
+    { num_emp: "2009948", nombre: "VALERY DANIELA", apellido_paterno: "SANCHEZ", apellido_materno: "LICEA", correo: "valery.sanchez@nadro.com.mx", estatus: "A" },
+    { num_emp: "2010180", nombre: "KAREN PAOLA", apellido_paterno: "RODRIGUEZ", apellido_materno: "OLVERA", correo: "karen.rodriguez@nomail.com", estatus: "A" },
+    { num_emp: "2010231", nombre: "DANIELA", apellido_paterno: "ALMANZA", apellido_materno: "FRANCO", correo: "daniela.almanza@nomail.com", estatus: "A" },
+    { num_emp: "2010237", nombre: "LUCIA MAGALY", apellido_paterno: "MORALES", apellido_materno: "CORTES", correo: "lucia.morales@nomail.com", estatus: "A" },
+    { num_emp: "2010241", nombre: "ANA LIDIA", apellido_paterno: "CONTRERAS", apellido_materno: "ROMERO", correo: "ana.contreras@nomail.com", estatus: "A" },
+    { num_emp: "2010264", nombre: "GABRIELA SOLEDAD", apellido_paterno: "LOPEZ", apellido_materno: "VAZQUEZ", correo: "gabriela.lopez@nomail.com", estatus: "A" },
+    { num_emp: "2010265", nombre: "ELIZABETH ESPERANZA", apellido_paterno: "URBAN", apellido_materno: "URBINA", correo: "elizabeth.urban@nomail.com", estatus: "A" },
+    { num_emp: "2010286", nombre: "BRYAN ISRAEL", apellido_paterno: "FLORES", apellido_materno: "SANTIAGO", correo: "bryan.flores@nomail.com", estatus: "A" },
+    { num_emp: "2010287", nombre: "JOSHUA SINUE", apellido_paterno: "ALDANA", apellido_materno: "GARCIA", correo: "joshua.aldana@nomail.com", estatus: "A" },
+    { num_emp: "2010288", nombre: "CEFERINO PEDRO", apellido_paterno: "HERNANDEZ", apellido_materno: "HERRERA", correo: "ceferino.hernandez@nomail.com", estatus: "A" },
+    { num_emp: "2010290", nombre: "NATALIA BERENICE", apellido_paterno: "ACUÑA", apellido_materno: "LOPEZ", correo: "natalia.acuna@nomail.com", estatus: "A" },
+    { num_emp: "2010295", nombre: "ERICK", apellido_paterno: "MONTIEL", apellido_materno: "HERRERA", correo: "erick.montiel@nomail.com", estatus: "A" },
+    { num_emp: "2010325", nombre: "EDGAR GENARO", apellido_paterno: "TREJO", apellido_materno: "RAMOS", correo: "edgar.trejo@nomail.com", estatus: "A" },
+    { num_emp: "2010326", nombre: "JORGE", apellido_paterno: "RAMIREZ", apellido_materno: "PACHECO", correo: "jorge.ramirez@nomail.com", estatus: "A" },
+    { num_emp: "2010328", nombre: "MAURICIO YERETH", apellido_paterno: "RIVAS", apellido_materno: "CORONA", correo: "mauricio.rivas@nomail.com", estatus: "A" },
+    { num_emp: "2010329", nombre: "BLANCA ESTELA", apellido_paterno: "RODRIGUEZ", apellido_materno: "ROSAS", correo: "blanca.rodriguez@nomail.com", estatus: "A" },
+    { num_emp: "2010336", nombre: "ALEJANDRA", apellido_paterno: "GUZMAN", apellido_materno: "CORTEZ", correo: "alejandra.guzman@nomail.com", estatus: "A" },
+    { num_emp: "2010599", nombre: "JOSE MANUEL", apellido_paterno: "HERNÁNDEZ", apellido_materno: "ESCALANTE", correo: "jose.hernandez@nomail.com", estatus: "A" },
+  ];
+
+  // URL de la Azure Function ya desplegada (ubi-headcount).
+  // El "code" es la tecla de función — funciona como autenticación,
+  // no la compartas fuera de la organización.
+  const FUNCTION_URL = 'https://ubi-headcount-bncrhqfqcxc4f0ay.canadacentral-01.azurewebsites.net/api/empleados-activos?code=5NxfyQwM4-OdECJ_bcVtc2lmmfD7naYyUsuNyp49rIjiAzFuUL3LBA==';
+
+  async function cargarDatos(){
+    try {
+      const resp = await fetch(FUNCTION_URL);
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      if (!Array.isArray(json) || !json.length) throw new Error('Respuesta vacía');
+      document.getElementById('fuenteDatos').textContent = 'Fuente: API en vivo (vía proxy local)';
+      return json;
+    } catch (err) {
+      console.warn('No se pudo conectar al proxy, usando datos de prueba:', err.message);
+      document.getElementById('fuenteDatos').textContent = 'Fuente: datos de prueba — no se pudo conectar al proxy (' + err.message + ')';
+      return DATOS_PRUEBA;
+    }
+  }
+
+  let todos = [];
+
+  function nombreCompleto(e){
+    return `${e.nombre} ${e.apellido_paterno} ${e.apellido_materno || ''}`.trim();
+  }
+
+  function renderCounter(n){
+    const digits = String(n).padStart(3, '0').split('');
+    document.getElementById('counter').innerHTML =
+      digits.map(d => `<span class="counter-digit">${d}</span>`).join('');
+  }
+
+  function renderTabla(lista){
+    const tbody = document.getElementById('tbody');
+    const emptyState = document.getElementById('emptyState');
+    const resultCount = document.getElementById('resultCount');
+
+    if (!lista.length){
+      tbody.innerHTML = '';
+      emptyState.style.display = 'block';
+    } else {
+      emptyState.style.display = 'none';
+      tbody.innerHTML = lista.map(e => `
+        <tr>
+          <td class="num">${e.num_emp}</td>
+          <td>${nombreCompleto(e)}</td>
+          <td class="email">${e.correo || '—'}</td>
+          <td><span class="badge">Activo</span></td>
+        </tr>
+      `).join('');
+    }
+
+    resultCount.innerHTML = `<b>${lista.length}</b> de ${todos.length} colaboradores`;
+  }
+
+  function aplicarFiltros(){
+    const numQuery = document.getElementById('buscarEmpleado').value.trim();
+    const nombreQuery = document.getElementById('buscarNombre').value.trim().toUpperCase();
+
+    const filtrados = todos.filter(e => {
+      const coincideNum = numQuery ? e.num_emp.includes(numQuery) : true;
+      const coincideNombre = nombreQuery ? nombreCompleto(e).toUpperCase().includes(nombreQuery) : true;
+      return coincideNum && coincideNombre;
+    });
+
+    renderTabla(filtrados);
+  }
+
+  document.getElementById('buscarEmpleado').addEventListener('input', aplicarFiltros);
+  document.getElementById('buscarNombre').addEventListener('input', aplicarFiltros);
+  document.getElementById('limpiar').addEventListener('click', () => {
+    document.getElementById('buscarEmpleado').value = '';
+    document.getElementById('buscarNombre').value = '';
+    aplicarFiltros();
+  });
+
+  function actualizarReloj(){
+    const ahora = new Date();
+    document.getElementById('reloj').textContent =
+      'Actualizado ' + ahora.toLocaleString('es-MX', { dateStyle:'medium', timeStyle:'short' });
+  }
+
+  (async function init(){
+    todos = await cargarDatos();
+    renderCounter(todos.length);
+    renderTabla(todos);
+    actualizarReloj();
+  })();
+</script>
+
+</body>
+</html>
