@@ -507,6 +507,7 @@
     document.getElementById('scanBar').classList.add('is-active');
 
     todos = await cargarDatos();
+    todos.sort((a, b) => Number(a.num_emp) - Number(b.num_emp));
 
     document.getElementById('scanBar').classList.remove('is-active');
     renderCounter(todos.length);
