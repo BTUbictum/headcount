@@ -418,6 +418,53 @@
     font-size:14px;
   }
 
+  .conn-error{
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:14px;
+    padding:70px 24px;
+    text-align:center;
+  }
+  .conn-error.is-active{ display:flex; }
+  .conn-error-icon{
+    width:44px; height:44px;
+    border-radius:50%;
+    background:rgba(220,90,80,.1);
+    color:#c0433a;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:20px;
+    font-weight:700;
+  }
+  .conn-error-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:16px;
+    color:var(--text);
+  }
+  .conn-error-detail{
+    color:var(--text-muted);
+    font-size:13px;
+    max-width:360px;
+  }
+  .retry-btn{
+    margin-top:4px;
+    border:1px solid var(--accent);
+    background:var(--accent-soft);
+    color:var(--azul);
+    padding:9px 20px;
+    border-radius:8px;
+    font-family:'Inter', sans-serif;
+    font-size:13.5px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .retry-btn:hover{ background:rgba(84,164,179,.2); }
+
   footer{
     margin-top:20px;
     display:flex;
@@ -486,7 +533,7 @@
 <div class="scan-bar" id="scanBar"></div>
 
 <div class="table-wrap">
-  <table>
+  <table id="tablaEmpleados">
     <thead>
       <tr>
         <th>No. Empleado</th>
@@ -499,6 +546,12 @@
   </table>
   <div class="empty-state" id="emptyState" style="display:none">
     No se encontraron colaboradores con ese criterio de búsqueda.
+  </div>
+  <div class="conn-error" id="connError">
+    <div class="conn-error-icon">!</div>
+    <div class="conn-error-title">No se pudo conectar con la API</div>
+    <div class="conn-error-detail" id="connErrorDetail">No se recibió respuesta del servidor. Verifica tu conexión e intenta de nuevo.</div>
+    <button class="retry-btn" id="btnReintentar">Reintentar conexión</button>
   </div>
 </div>
 
@@ -520,47 +573,17 @@
    * la función cargarDatos() por un fetch al endpoint del proxy
    * (ver comentario al final del script).
    * ============================================================ */
-  const DATOS_PRUEBA = [
-    { num_emp: "2009896", nombre: "ABRAM", apellido_paterno: "GUTIERREZ", apellido_materno: "CATALAN", correo: "abram.gutierrez@nadro.com.mx", estatus: "A" },
-    { num_emp: "2009903", nombre: "MONICA", apellido_paterno: "ZAMORA", apellido_materno: "SANTOS", correo: "monica.zamora@nadro.com.mx", estatus: "A" },
-    { num_emp: "2009948", nombre: "VALERY DANIELA", apellido_paterno: "SANCHEZ", apellido_materno: "LICEA", correo: "valery.sanchez@nadro.com.mx", estatus: "A" },
-    { num_emp: "2010180", nombre: "KAREN PAOLA", apellido_paterno: "RODRIGUEZ", apellido_materno: "OLVERA", correo: "karen.rodriguez@nomail.com", estatus: "A" },
-    { num_emp: "2010231", nombre: "DANIELA", apellido_paterno: "ALMANZA", apellido_materno: "FRANCO", correo: "daniela.almanza@nomail.com", estatus: "A" },
-    { num_emp: "2010237", nombre: "LUCIA MAGALY", apellido_paterno: "MORALES", apellido_materno: "CORTES", correo: "lucia.morales@nomail.com", estatus: "A" },
-    { num_emp: "2010241", nombre: "ANA LIDIA", apellido_paterno: "CONTRERAS", apellido_materno: "ROMERO", correo: "ana.contreras@nomail.com", estatus: "A" },
-    { num_emp: "2010264", nombre: "GABRIELA SOLEDAD", apellido_paterno: "LOPEZ", apellido_materno: "VAZQUEZ", correo: "gabriela.lopez@nomail.com", estatus: "A" },
-    { num_emp: "2010265", nombre: "ELIZABETH ESPERANZA", apellido_paterno: "URBAN", apellido_materno: "URBINA", correo: "elizabeth.urban@nomail.com", estatus: "A" },
-    { num_emp: "2010286", nombre: "BRYAN ISRAEL", apellido_paterno: "FLORES", apellido_materno: "SANTIAGO", correo: "bryan.flores@nomail.com", estatus: "A" },
-    { num_emp: "2010287", nombre: "JOSHUA SINUE", apellido_paterno: "ALDANA", apellido_materno: "GARCIA", correo: "joshua.aldana@nomail.com", estatus: "A" },
-    { num_emp: "2010288", nombre: "CEFERINO PEDRO", apellido_paterno: "HERNANDEZ", apellido_materno: "HERRERA", correo: "ceferino.hernandez@nomail.com", estatus: "A" },
-    { num_emp: "2010290", nombre: "NATALIA BERENICE", apellido_paterno: "ACUÑA", apellido_materno: "LOPEZ", correo: "natalia.acuna@nomail.com", estatus: "A" },
-    { num_emp: "2010295", nombre: "ERICK", apellido_paterno: "MONTIEL", apellido_materno: "HERRERA", correo: "erick.montiel@nomail.com", estatus: "A" },
-    { num_emp: "2010325", nombre: "EDGAR GENARO", apellido_paterno: "TREJO", apellido_materno: "RAMOS", correo: "edgar.trejo@nomail.com", estatus: "A" },
-    { num_emp: "2010326", nombre: "JORGE", apellido_paterno: "RAMIREZ", apellido_materno: "PACHECO", correo: "jorge.ramirez@nomail.com", estatus: "A" },
-    { num_emp: "2010328", nombre: "MAURICIO YERETH", apellido_paterno: "RIVAS", apellido_materno: "CORONA", correo: "mauricio.rivas@nomail.com", estatus: "A" },
-    { num_emp: "2010329", nombre: "BLANCA ESTELA", apellido_paterno: "RODRIGUEZ", apellido_materno: "ROSAS", correo: "blanca.rodriguez@nomail.com", estatus: "A" },
-    { num_emp: "2010336", nombre: "ALEJANDRA", apellido_paterno: "GUZMAN", apellido_materno: "CORTEZ", correo: "alejandra.guzman@nomail.com", estatus: "A" },
-    { num_emp: "2010599", nombre: "JOSE MANUEL", apellido_paterno: "HERNÁNDEZ", apellido_materno: "ESCALANTE", correo: "jose.hernandez@nomail.com", estatus: "A" },
-  ];
-
   // URL de la Azure Function ya desplegada (ubi-headcount).
   // El "code" es la tecla de función — funciona como autenticación,
   // no la compartas fuera de la organización.
   const FUNCTION_URL = 'https://ubi-headcount-bncrhqfqcxc4f0ay.canadacentral-01.azurewebsites.net/api/empleados-activos?code=5NxfyQwM4-OdECJ_bcVtc2lmmfD7naYyUsuNyp49rIjiAzFuUL3LBA==';
 
   async function cargarDatos(){
-    try {
-      const resp = await fetch(FUNCTION_URL);
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const json = await resp.json();
-      if (!Array.isArray(json) || !json.length) throw new Error('Respuesta vacía');
-      document.getElementById('fuenteDatos').textContent = 'Fuente: API en vivo';
-      return json;
-    } catch (err) {
-      console.warn('No se pudo conectar al proxy, usando datos de prueba:', err.message);
-      document.getElementById('fuenteDatos').textContent = 'Fuente: datos de prueba — no se pudo conectar al proxy (' + err.message + ')';
-      return DATOS_PRUEBA;
-    }
+    const resp = await fetch(FUNCTION_URL);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const json = await resp.json();
+    if (!Array.isArray(json) || !json.length) throw new Error('La API respondió sin datos');
+    return json;
   }
 
   let todos = [];
@@ -644,19 +667,44 @@
       'Actualizado ' + ahora.toLocaleString('es-MX', { dateStyle:'medium', timeStyle:'short' });
   }
 
+  function mostrarErrorConexion(mensaje){
+    document.getElementById('scanBar').classList.remove('is-active');
+    document.getElementById('tablaEmpleados').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('connError').classList.add('is-active');
+    document.getElementById('connErrorDetail').textContent = mensaje;
+    document.getElementById('resultCount').textContent = '';
+    document.getElementById('fuenteDatos').textContent = 'Sin conexión con la API';
+    renderCounter(0);
+  }
+
+  function ocultarErrorConexion(){
+    document.getElementById('tablaEmpleados').style.display = '';
+    document.getElementById('connError').classList.remove('is-active');
+  }
+
   async function iniciarPortal(){
+    ocultarErrorConexion();
     renderCounterLoading();
     renderSkeletonTabla();
     document.getElementById('scanBar').classList.add('is-active');
 
-    todos = await cargarDatos();
-    todos.sort((a, b) => Number(a.num_emp) - Number(b.num_emp));
+    try {
+      todos = await cargarDatos();
+      todos.sort((a, b) => Number(a.num_emp) - Number(b.num_emp));
 
-    document.getElementById('scanBar').classList.remove('is-active');
-    renderCounter(todos.length);
-    renderTabla(todos);
-    actualizarReloj();
+      document.getElementById('scanBar').classList.remove('is-active');
+      document.getElementById('fuenteDatos').textContent = 'Fuente: API en vivo';
+      renderCounter(todos.length);
+      renderTabla(todos);
+      actualizarReloj();
+    } catch (err) {
+      console.error('Error al cargar HeadCount:', err);
+      mostrarErrorConexion(err.message || 'No se pudo obtener la información. Intenta de nuevo.');
+    }
   }
+
+  document.getElementById('btnReintentar').addEventListener('click', iniciarPortal);
 
   /* ============================================================
    * AUTENTICACIÓN — MSAL.js contra U-PersonalActivo (Entra ID)
