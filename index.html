@@ -352,6 +352,34 @@
   }
   .clear-btn:hover{ border-color:var(--text-muted); color:var(--text); }
 
+  .download-btn{
+    align-self:flex-end;
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    background:var(--accent-soft);
+    border:1px solid var(--accent);
+    color:var(--azul);
+    border-radius:6px;
+    padding:10px 14px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    font-family:'Inter', sans-serif;
+    transition:background .15s ease;
+    white-space:nowrap;
+  }
+  .download-btn:hover{ background:rgba(84,164,179,.2); }
+  .download-btn.secondary{
+    background:none;
+    border:1px solid var(--border);
+    color:var(--text-muted);
+  }
+  .download-btn.secondary:hover{ border-color:var(--accent); color:var(--azul); }
+  .download-btn:disabled{ opacity:.45; cursor:not-allowed; }
+  .download-btn:disabled:hover{ background:var(--accent-soft); }
+  .download-btn.secondary:disabled:hover{ background:none; border-color:var(--border); color:var(--text-muted); }
+
   .result-count{
     margin-left:auto;
     align-self:flex-end;
@@ -527,6 +555,8 @@
     <input type="text" id="buscarNombre" placeholder="Buscar por nombre" />
   </div>
   <button class="clear-btn" id="limpiar">Limpiar filtros</button>
+  <button class="download-btn" id="btnDescargaTotal" disabled>⬇ Descarga Total</button>
+  <button class="download-btn secondary" id="btnDescargaFiltro" disabled>⬇ Descarga por Filtro</button>
   <div class="result-count" id="resultCount"></div>
 </div>
 
@@ -563,6 +593,7 @@
 </div><!-- /app-shell -->
 
 <script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
   /* ============================================================
    * DATOS DE PRUEBA
@@ -587,6 +618,7 @@
   }
 
   let todos = [];
+  let visibleActual = [];
 
   function nombreCompleto(e){
     return `${e.nombre} ${e.apellido_paterno} ${e.apellido_materno || ''}`.trim();
@@ -638,6 +670,8 @@
     }
 
     resultCount.innerHTML = `<b>${lista.length}</b> de ${todos.length} colaboradores`;
+    visibleActual = lista;
+    document.getElementById('btnDescargaFiltro').disabled = lista.length === 0;
   }
 
   function aplicarFiltros(){
@@ -661,6 +695,40 @@
     aplicarFiltros();
   });
 
+  /* ============================================================
+   * DESCARGA A EXCEL (SheetJS)
+   * ------------------------------------------------------------
+   * "Descarga Total" exporta todo lo traído por la API (todos).
+   * "Descarga por Filtro" exporta solo lo visible en ese momento
+   * según los filtros de No. Empleado / Nombre (visibleActual).
+   * ============================================================ */
+  function exportarExcel(lista, nombreArchivo){
+    if (!lista.length) return;
+
+    const filas = lista.map(e => ({
+      'No. Empleado': e.num_emp,
+      'Nombre completo': nombreCompleto(e),
+      'Correo': e.correo || '',
+      'Estatus': 'Activo',
+    }));
+
+    const hoja = XLSX.utils.json_to_sheet(filas);
+    hoja['!cols'] = [{ wch:14 }, { wch:32 }, { wch:32 }, { wch:12 }];
+
+    const libro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(libro, hoja, 'HeadCount');
+
+    const fecha = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(libro, `${nombreArchivo}_${fecha}.xlsx`);
+  }
+
+  document.getElementById('btnDescargaTotal').addEventListener('click', () => {
+    exportarExcel(todos, 'HeadCount_Total');
+  });
+  document.getElementById('btnDescargaFiltro').addEventListener('click', () => {
+    exportarExcel(visibleActual, 'HeadCount_Filtrado');
+  });
+
   function actualizarReloj(){
     const ahora = new Date();
     document.getElementById('reloj').textContent =
@@ -675,6 +743,8 @@
     document.getElementById('connErrorDetail').textContent = mensaje;
     document.getElementById('resultCount').textContent = '';
     document.getElementById('fuenteDatos').textContent = 'Sin conexión con la API';
+    document.getElementById('btnDescargaTotal').disabled = true;
+    document.getElementById('btnDescargaFiltro').disabled = true;
     renderCounter(0);
   }
 
@@ -695,6 +765,7 @@
 
       document.getElementById('scanBar').classList.remove('is-active');
       document.getElementById('fuenteDatos').textContent = 'Fuente: API en vivo';
+      document.getElementById('btnDescargaTotal').disabled = false;
       renderCounter(todos.length);
       renderTabla(todos);
       actualizarReloj();
